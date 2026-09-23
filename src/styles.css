@@ -1,30 +1,113 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 20px;
+:root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #29382f;
+  background: #fafbf8;
+  font-synthesis: none;
   line-height: 1.6;
-  color: #202124;
-  background: #fff;
 }
 
-main {
-  max-width: 900px;
-  margin: 0 auto;
+* {
+  box-sizing: border-box;
 }
 
-h1 {
-  line-height: 1.2;
+body {
+  margin: 0;
 }
 
 a {
-  color: #1558b0;
-  text-underline-offset: 3px;
-}
-
-a:hover {
-  color: #0b3978;
+  color: inherit;
 }
 
 a:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid #426b50;
   outline-offset: 4px;
+}
+
+.site-shell {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 64px 32px;
+}
+
+.course-name {
+  margin: 0 0 6px;
+  color: #637065;
+  font-size: 14px;
+}
+
+h1 {
+  margin: 0 0 32px;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.25;
+}
+
+.assignment-tabs {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  border-bottom: 1px solid #dde3d9;
+  padding-top: 4px;
+}
+
+.assignment-tab {
+  flex-shrink: 0;
+  padding: 12px 2px;
+  border-bottom: 2px solid transparent;
+  color: #687268;
+  font-size: 14px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.assignment-tab:hover {
+  color: #294f35;
+  border-bottom-color: #b5c5b3;
+}
+
+.assignment-tab.active {
+  color: #294f35;
+  border-bottom-color: #426b50;
+  font-weight: 600;
+}
+
+.assignment-tab:focus-visible {
+  outline-offset: -3px;
+}
+
+.assignment-panel {
+  padding: 32px 0;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.placeholder {
+  margin: 0;
+  color: #747d72;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .site-shell {
+    padding: 36px 20px;
+  }
+
+  h1 {
+    font-size: 28px;
+    margin-bottom: 24px;
+  }
+
+  .assignment-tabs {
+    gap: 20px;
+  }
+
+  .assignment-panel {
+    padding-top: 26px;
+  }
 }

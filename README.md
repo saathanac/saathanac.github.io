@@ -1,4 +1,4 @@
-# SYDE 572 Portfolio
+# SYDE 572 Assignments Website
 
 A small React website built with Vite, hosted at `saathanac.github.io`.
 
@@ -12,14 +12,17 @@ npm run dev
 ```
 
 Open the local URL printed in the terminal. Edit `src/App.jsx` for the homepage,
-`src/pages/Assignment1.jsx` for Assignment 1, and `src/styles.css` for styling.
+`src/pages/Assignment1.jsx` through `src/pages/Assignment5.jsx` for the five
+assignment pages, and `src/styles.css` for styling.
 Use the development server instead of opening `index.html` directly.
 
-## Adding assignments
+## Assignment tabs
 
-Create a component in `src/pages/`, import it in `src/App.jsx`, add a `Route`,
-and add a `Link` on the homepage. Routes use a hash, such as
-`/#/assignments/1`, so direct links and refreshes work on GitHub Pages.
+All five assignments have their own tab and page component in `src/pages/`.
+Replace the `AssignmentPlaceholder` in each component with your write-up,
+experiments, and results.
+Routes use a hash, such as `/#/assignments/1`, so direct links and refreshes work
+on GitHub Pages. The homepage opens Assignment 1 by default.
 Put downloadable files and images in `public/` and reference them by paths
 such as `/report.pdf`.
 
