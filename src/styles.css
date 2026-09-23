@@ -1,0 +1,30 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  line-height: 1.6;
+  color: #202124;
+  background: #fff;
+}
+
+main {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+h1 {
+  line-height: 1.2;
+}
+
+a {
+  color: #1558b0;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: #0b3978;
+}
+
+a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
