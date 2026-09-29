@@ -1,5 +1,7 @@
 import { Link, NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
-import Assignment1 from './pages/Assignment1.jsx';
+import { lazy, Suspense } from 'react';
+
+const Assignment1 = lazy(() => import('./pages/Assignment1.jsx'));
 import Assignment2 from './pages/Assignment2.jsx';
 import Assignment3 from './pages/Assignment3.jsx';
 import Assignment4 from './pages/Assignment4.jsx';
@@ -24,7 +26,7 @@ function AssignmentPage() {
   return (
     <section className="assignment-panel" aria-labelledby="assignment-title" key={number}>
       <h2 id="assignment-title">Assignment {number}</h2>
-      <Content />
+      <Suspense fallback={<p>Loading assignment…</p>}><Content /></Suspense>
     </section>
   );
 }
@@ -33,7 +35,7 @@ export default function App() {
   return (
     <div className="site-shell">
       <header className="site-header">
-        <p className="course-name">SYDE 572 · Pattern Recognition</p>
+        <p className="course-name">SYDE 572 · Pattern Recognition <br/> Saathana Chandrakumar</p>
         <h1>Assignments</h1>
       </header>
       <main>

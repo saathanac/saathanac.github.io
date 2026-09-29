@@ -1,0 +1,2 @@
+# Only needed to regenerate the SVG plots; the numerical solver has no dependencies.
+matplotlib==3.11.2

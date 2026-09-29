@@ -6,14 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:data": "python3 scripts/assignment1.py",
+    "generate:plots": "python3 scripts/generate_plots.py",
+    "test:numerics": "python3 -m unittest discover -s tests -p 'test_*.py'",
+    "test:ui": "playwright test"
   },
   "dependencies": {
+    "katex": "^0.18.8",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@vitejs/plugin-react": "^6.1.1",
     "vite": "^8.3.0"
   }
