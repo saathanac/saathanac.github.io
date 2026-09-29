@@ -9,7 +9,7 @@ test('all five worked points, math, plots, tables, and navigation', async ({ pag
   await expect(page.getByRole('heading', { name: 'Part 1 · Distance from a curve' })).toBeVisible();
   for (let i = 0; i < 5; i++) {
     await page.getByLabel('Worked point', { exact: true }).selectOption(String(i));
-    for (const section of ['problem', 'analytical', 'newton', 'golden']) {
+    for (const section of ['analytical', 'newton', 'golden']) {
       const active = page.locator(`#${section} .point-work:not(.inactive-point)`);
       await expect(active).toHaveCount(1);
       await expect(active.getByRole('heading').first()).toContainText(points[i]);
@@ -28,7 +28,7 @@ test('all five worked points, math, plots, tables, and navigation', async ({ pag
       expect(await image.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
     }
   }
-  expect(await page.locator('.katex').count()).toBeGreaterThan(100);
+  expect(await page.locator('.katex').count()).toBeGreaterThan(50);
   await expect(page.locator('.katex-error')).toHaveCount(0);
   await expect(page.locator('math').first()).toBeAttached();
   await page.getByRole('button', { name: 'Analytical', exact: true }).click();
@@ -43,6 +43,7 @@ test('all five worked points, math, plots, tables, and navigation', async ({ pag
 
 test('Python and result downloads are real files', async ({ page }) => {
   await page.goto('/#/assignments/1');
+  await page.locator('#examples > .non-polynomial-example > details').last().locator('summary').first().click();
   for (const [name, filename] of [['Download Python source', 'solution.py'], ['Download results & histories (JSON)', 'results.json']]) {
     const response = await page.request.get(`/assignment1/${filename}`);
     expect(response.ok()).toBe(true);
@@ -71,12 +72,12 @@ test('mobile layout confines wide equations and tables', async ({ page }) => {
 test('print includes every point and collapsed histories, then restores screen state', async ({ page }) => {
   await page.goto('/#/assignments/1');
   await expect(page.getByRole('heading', { name: 'Part 1 · Distance from a curve' })).toBeVisible();
-  await expect(page.locator('details')).toHaveCount(16);
+  await expect(page.locator('details')).toHaveCount(13);
   await page.evaluate(() => document.fonts.ready);
   await page.emulateMedia({ media: 'print' });
   await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
   await expect(page.locator('details:not([open])')).toHaveCount(0);
-  for (const section of ['problem', 'analytical', 'newton', 'golden']) {
+  for (const section of ['analytical', 'newton', 'golden']) {
     for (const item of await page.locator(`#${section} .point-work`).all()) await expect(item).toBeVisible();
   }
   await expect(page.getByRole('button', { name: 'Print full solution' })).toBeHidden();
@@ -89,4 +90,41 @@ test('print includes every point and collapsed histories, then restores screen s
   await page.emulateMedia({ media: 'screen' });
   await expect(page.locator('details[open]')).toHaveCount(0);
   await expect(page.locator('#analytical .point-work:visible')).toHaveCount(1);
+});
+
+
+test('non-polynomial selector updates results, plots, histories, and Python', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/#/assignments/1');
+  const section = page.locator('#examples');
+  await expect(section.getByRole('heading', { name: '6. Non-polynomial examples' })).toBeVisible();
+  await expect(section.locator('option')).toHaveCount(2);
+  for (const [i, label] of ['Exponential', 'Logarithmic'].entries()) {
+    await section.getByLabel('Example', { exact: true }).selectOption(String(i));
+    await expect(section.locator('caption').first()).toHaveText(`${label} results`);
+    const rows = section.getByRole('region', { name: 'Non-polynomial results', exact: true }).locator('tbody tr');
+    await expect(rows).toHaveCount(2);
+    const distance = '0.779767';
+    await expect(rows.first()).toContainText(distance);
+    await expect(rows.last()).toContainText(distance);
+    if (i === 1) {
+      await expect(section.getByText('Domain: x > 0.', { exact: true })).toBeVisible();
+      await expect(section.locator('.calculation-note')).toContainText('[0.1, 2]');
+    } else await expect(section.getByText('Domain: x > 0.', { exact: true })).toHaveCount(0);
+    await expect(section.locator('img')).toHaveCount(3);
+    for (const img of await section.locator('img').all()) {
+      await expect(img).toHaveAttribute('src', new RegExp(`example-${i}-`));
+      await img.evaluate(el => el.decode());
+      expect(await img.evaluate(el => el.naturalWidth > 0)).toBe(true);
+    }
+    await section.getByText('Iteration tables', { exact: true }).click();
+    await expect(section.locator('details').first().locator('table')).toHaveCount(2);
+    await section.getByText('Python code', { exact: true }).click();
+    await expect(section.locator('pre').first()).toContainText(i === 0 ? 'exponential_functions' : 'logarithmic_functions');
+    await section.screenshot({ path: `test-results/example-${i}.png` });
+  }
+  expect(errors).toEqual([]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

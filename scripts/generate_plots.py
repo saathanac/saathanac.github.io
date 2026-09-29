@@ -1,4 +1,5 @@
 """Generate reproducible, downloadable SVG figures from Python result data."""
+import argparse
 import json
 import os
 from pathlib import Path
@@ -31,10 +32,20 @@ def save(fig, name):
     plt.close(fig)
 
 
-for index, c in enumerate(DATA['cases']):
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--examples-only', action='store_true', help='Only refresh non-polynomial figures.')
+args = parser.parse_args()
+plot_cases = [] if args.examples_only else [(str(i), c, None) for i, c in enumerate(DATA['cases'])]
+for i, e in enumerate(DATA['examples']):
+    if e['newton'][0]['converged'] and e['golden'][0]['converged']:
+        plot_cases.append((f'example-{i}', dict(point=e['point'], analytical=e['newton'][0],
+                          newton=e['newton'][0], golden=e['golden'][0], objective=e['objective']), e))
+
+for index, c, example in plot_cases:
     p, a, n, g = c['point'], c['analytical'], c['newton'], c['golden']
     fig, ax = plt.subplots(figsize=(6, 5), layout='constrained')
-    ax.plot(*zip(*DATA['curve']), color=GREEN, label='y = x² + 5')
+    ax.plot(*zip(*(example['curve'] if example else DATA['curve'])), color=GREEN,
+            label=f"y = ${example['formula']}$" if example else 'y = x² + 5')
     ax.plot([p[0], a['x']], [p[1], a['y']], '--', color=AMBER, label=f"d = {a['distance']:.6f}")
     ax.scatter(*p, c=BLUE, marker='s', zorder=4)
     ax.scatter(a['x'], a['y'], c=GREEN, zorder=4)
@@ -42,11 +53,16 @@ for index, c in enumerate(DATA['cases']):
     ax.annotate(f"Q* = ({a['x']:.6f}, {a['y']:.6f})", (a['x'], a['y']),
                 xytext=(12, 17), textcoords='offset points', fontsize=9,
                 arrowprops={'arrowstyle': '-', 'color': GREEN})
-    tangent_x = [a['x'] - 1.3, a['x'] + 1.3]
-    ax.plot(tangent_x, [a['y'] + 2*a['x']*(x-a['x']) for x in tangent_x],
-            ':', color='#777777', label='Tangent at Q*')
-    ax.set_xlim(min(-3.5, p[0]-1), max(4, p[0]+1))
-    ax.set_ylim(-1.5, 15)
+    if example:
+        xs, ys = zip(*example['curve'])
+        ax.set_xlim(min(0, min(xs)) - .35, max(xs) + .35)
+        ax.set_ylim(min(0, min(ys)) - .35, max(ys) + .5)
+    else:
+        tangent_x = [a['x'] - 1.3, a['x'] + 1.3]
+        ax.plot(tangent_x, [a['y'] + 2*a['x']*(x-a['x']) for x in tangent_x],
+                ':', color='#777777', label='Tangent at Q*')
+        ax.set_xlim(min(-3.5, p[0]-1), max(4, p[0]+1))
+        ax.set_ylim(-1.5, 15)
     ax.set_aspect('equal', adjustable='box')
     style(ax, 'x (coordinate units)', 'y (coordinate units)')
     ax.legend(loc='upper left', fontsize=8, framealpha=.95)
@@ -72,21 +88,22 @@ for index, c in enumerate(DATA['cases']):
                        textcoords='offset points', ha='center', fontsize=8)
     trace.set_xticks(range(len(estimates)))
     trace.margins(x=.15, y=.3)
-    trace.set_title('Accepted Newton estimates', fontsize=11)
+    trace.set_title('Newton’s estimate at each iteration', fontsize=11)
     style(trace, 'Iteration k', 'x⁽ᵏ⁾ (coordinate units)')
     trace.legend(loc='best', fontsize=8)
     save(fig, f'{index}-newton.svg')
 
     fig, (ax, width_ax) = plt.subplots(1, 2, figsize=(9, 4), layout='constrained')
-    intervals = [(-2, 2)] + [(r['retained_a'], r['retained_b']) for r in g['history']]
+    intervals = [tuple(example['intervals'][0]) if example else (-2, 2)] + [(r['retained_a'], r['retained_b']) for r in g['history']]
     chosen = sorted(set([0, 1, 2, 3, 5, 10, len(intervals)-1]))
     for row, k in enumerate(chosen):
         lo, hi = intervals[k]
         ax.plot([lo, hi], [row, row], color=GREEN, lw=3, marker='|', markersize=8)
-    ax.axvline(a['x'], color=AMBER, ls='--', label='Analytical x*')
+    ax.axvline(a['x'], color=AMBER, ls='--', label='Final Newton estimate' if example else 'Analytical x*')
     ax.set_yticks(range(len(chosen)), [f'k = {k}' for k in chosen])
     ax.invert_yaxis()
-    ax.set_xlim(-2.2, 2.2)
+    lo, hi = intervals[0]
+    ax.set_xlim(lo - .05*(hi-lo), hi + .05*(hi-lo))
     ax.set_title('Intervals after k updates', fontsize=11)
     style(ax, 'x (coordinate units)', 'Update number')
     ax.legend(fontsize=8, loc='best')
@@ -97,4 +114,4 @@ for index, c in enumerate(DATA['cases']):
     style(width_ax, 'Updates completed', 'b − a (coordinate units, log scale)')
     width_ax.legend(fontsize=8)
     save(fig, f'{index}-golden.svg')
-print(f'Wrote 15 SVG figures to {OUT}')
+print(f'Wrote {3 * len(plot_cases)} SVG figures to {OUT}')

@@ -1,31 +1,56 @@
+import { useState } from 'react';
 import M from './Math.jsx';
-import { fixed, scientific, NewtonTable, GoldenTable } from './WorkedSolutions.jsx';
+import { fixed, NewtonTable, GoldenTable, Plot } from './WorkedSolutions.jsx';
 
-const proofs = [
-  <><M block>{String.raw`D'(x)=x^3+4x-4,\qquad D''(x)=3x^2+4>0`}</M><p>The derivative changes sign between −2 and 2. Strict convexity and growth at infinity prove a unique global minimum.</p></>,
-  <><M block>{String.raw`D(x)=x^2+(x^2-2)^2=x^4-3x^2+4`}</M><M block>{String.raw`D'(x)=2x(2x^2-3)=0\quad\Longrightarrow\quad x=0,\;x=\pm\sqrt{3/2}`}</M><M block>{String.raw`D''(0)=-6,\qquad D''(\pm\sqrt{3/2})=12>0`}</M><M block>{String.raw`Q^*=(\pm\sqrt{3/2},3/2),\qquad d_{\min}=\sqrt{7}/2\approx1.322876`}</M><p>These are all stationary points, and D tends to infinity at both ends. Comparing D(0) = 4 with D(±√(3/2)) = 7/4 proves two equal global minima. A single golden-section search across both wells is not justified. Each interval below contains one minimum and is unimodal; convexity on the entire interval is not required. Starting Newton at zero satisfies stationarity but finds a local maximum.</p></>,
-  <><M block>{String.raw`D(x)=x^2+e^{2x},\quad D'(x)=2x+2e^{2x},\quad D''(x)=2+4e^{2x}>0`}</M><p>The derivative is negative at −2 and positive at 1. Coercivity and strict convexity establish the unique global minimum.</p></>,
-  <><M block>{String.raw`D(x)=x^2+(\ln x)^2,\quad D'(x)=2x+\frac{2\ln x}{x}`}</M><M block>{String.raw`D''(x)=2+\frac{2(1-\ln x)}{x^2}\ge 2-e^{-3}>0`}</M><p>For x ≤ e, the extra term is nonnegative. For x &gt; e, (ln x − 1)/x² has maximum 1/(2e³), attained at e³ᐟ². The derivative changes sign on [0.2, 2], and D tends to infinity as x → 0⁺ or x → ∞. The minimum is global on the logarithm’s domain.</p></>,
-  <><M block>{String.raw`D(x)=x^2+x^{-2},\quad D'(x)=2x-2x^{-3},\quad D''(x)=2+6x^{-4}>0`}</M><M block>{String.raw`x^4=1,\quad x>0\;\Longrightarrow\;x^*=1,\quad Q^*=(1,1),\quad d_{\min}=\sqrt2`}</M><p>This search is restricted to the positive branch. D diverges at 0⁺ and infinity, and its derivative changes sign on [0.2, 3]. On the full domain x ≠ 0, (−1, −1) is an equally close global minimizer.</p></>,
-];
+export default function Examples({ examples, pythonSource }) {
+  const [selected, setSelected] = useState(0);
+  const e = examples[selected];
+  const n = e.newton[0], g = e.golden[0];
+  const complete = n.converged && g.converged;
+  const base = `${import.meta.env.BASE_URL}assignment1/`;
+  const rows = [
+    ['Newton–Raphson', n, n.history.filter(r => r.action === 'Accepted update.').length],
+    ['Golden-section', g, g.history.length],
+  ];
 
-export default function Examples({ examples }) {
-  return <>{examples.map((e, i) => <article className="extra-example" key={e.label}>
-    <h4>{e.label}: <M>{`f(x)=${e.formula}`}</M>, P = ({e.point.join(', ')})</h4>
-    <p><strong>Domain:</strong> {e.domain}. <strong>Newton starts:</strong> {e.starts.join(', ')}. <strong>Golden intervals:</strong> {e.intervals.map(v => `[${v.join(', ')}]`).join(' and ')}.</p>
-    {proofs[i]}
-    <div className="table-scroll" tabIndex="0" role="region" aria-label={`${e.label} results`}><table>
-      <caption>Numerical results for {e.label.toLowerCase()}</caption>
-      <thead><tr>{['Method / start', 'Closest or stationary point Q', 'Distance', 'Interpretation'].map(v => <th scope="col" key={v}>{v}</th>)}</tr></thead>
-      <tbody>
-        {e.newton.map((n, j) => <tr key={`n${j}`}><th scope="row">Newton / {e.starts[j]}</th><td>({fixed(n.x, 6)}, {fixed(n.y, 6)})</td><td>{fixed(n.distance, 6)}</td><td>{n.converged ? n.classification : n.status}; |D′| = {scientific(n.residual)}</td></tr>)}
-        {e.golden.map((g, j) => <tr key={`g${j}`}><th scope="row">Golden / [{e.intervals[j].join(', ')}]</th><td>({fixed(g.x, 6)}, {fixed(g.y, 6)})</td><td>{fixed(g.distance, 6)}</td><td>{g.status} Width {scientific(g.width)}</td></tr>)}
-      </tbody>
-    </table></div>
-    <p>{e.scope}</p>
-    <details><summary>Iterations for this example</summary>
-      {e.newton.map((n, j) => <div key={`n${j}`}><h5>Newton, starting estimate {e.starts[j]}</h5><NewtonTable result={n} /></div>)}
-      {e.golden.map((g, j) => <div key={`g${j}`}><h5>Golden-section, interval [{e.intervals[j].join(', ')}]</h5><GoldenTable result={g} /></div>)}
-    </details>
-  </article>)}</>;
+  return <>
+    <div className="point-controls example-controls">
+      <label htmlFor="example-select">Example</label>
+      <select id="example-select" value={selected} onChange={event => setSelected(Number(event.target.value))}>
+        {examples.map((example, i) => <option key={example.label} value={i}>{example.label}</option>)}
+      </select>
+    </div>
+    <div key={e.label} className="non-polynomial-example">
+      <h4><M>{`f(x)=${e.formula}`}</M>, <M>{'P=(0,0)'}</M></h4>
+      <p>The same numerical routines are reused with a different function and, for Newton–Raphson, its derivatives.</p>
+      {e.domain === 'x > 0' && <p>Domain: x &gt; 0.</p>}
+      <p className="calculation-note"><small>Newton starting guess: {e.starts[0]}. Golden-section interval: [{e.intervals[0].join(', ')}].</small></p>
+      {complete && <Plot index={`example-${selected}`} kind="geometry" caption={`${e.label}: the segment joins P to the closest point Q*. Both axes use the same scale.`} />}
+      <div className="table-scroll" tabIndex="0" role="region" aria-label="Non-polynomial results">
+        <table>
+          <caption>{e.label} results</caption>
+          <thead><tr><th scope="col">Method</th><th scope="col">Closest point Q*</th><th scope="col">Distance</th><th scope="col">Iterations</th></tr></thead>
+          <tbody>{rows.map(([label, answer, count]) => <tr key={label}>
+            <th scope="row">{label}</th>
+            {answer.converged ? <><td>({fixed(answer.x, 6)}, {fixed(answer.y, 6)})</td><td>{fixed(answer.distance, 6)}</td><td>{count}</td></> :
+              <td colSpan="3" role="status">{answer.error ? 'The function could not be evaluated. Check its domain.' : 'No solution found within the calculation limits.'}</td>}
+          </tr>)}</tbody>
+        </table>
+      </div>
+      {complete && <>
+        <Plot index={`example-${selected}`} kind="newton" caption="Newton–Raphson: the estimates approach the closest point’s x-coordinate." />
+        <Plot index={`example-${selected}`} kind="golden" caption="Golden-section search: the interval narrows around the closest point’s x-coordinate." />
+      </>}
+      <details><summary>Iteration tables</summary>
+        <h5>Newton–Raphson</h5><NewtonTable result={n} />
+        <h5>Golden-section search</h5><GoldenTable result={g} />
+      </details>
+      <details><summary>Python code</summary>
+        <p>Save the downloaded source as <code>solution.py</code>, then run this example alongside it.</p>
+        <div className="downloads"><a href={`${base}solution.py`} download>Download Python source</a><a href={`${base}results.json`} download>Download results &amp; histories (JSON)</a></div>
+        <pre><code>{e.code}</code></pre>
+        <details className="source-details"><summary>Shared numerical routines and source</summary><pre><code>{pythonSource}</code></pre></details>
+      </details>
+    </div>
+  </>;
 }

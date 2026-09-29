@@ -1,11 +1,6 @@
-"""SYDE 572 Assignment 1, Part 1. Python 3.10+; standard library only.
-
-Run: python3 scripts/assignment1.py (in the repository)
-Or:  python3 solution.py --output results.json (downloaded standalone copy)
-Import newton, golden_section, and parabola for other functions and points.
-No library optimizer is used. Histories contain full-precision Python floats.
-"""
+"""SYDE 572 Assignment 1, Part 1. Python 3.10+; standard library only."""
 import argparse
+import inspect
 import json
 import math
 from pathlib import Path
@@ -190,12 +185,62 @@ def samples(f, left, right, count=241):
     return [[x, evaluate(f, x)] for x in (left+(right-left)*i/(count-1) for i in range(count))]
 
 
-def example(label, formula, domain, fns, point, starts, intervals, scope):
-    f, df, ddf = fns
+def exponential_functions():
+    return math.exp, math.exp, math.exp
+
+
+def logarithmic_functions():
+    def positive(x):
+        if x <= 0:
+            raise NumericalError('The logarithm requires x > 0.')
+        return x
+
+    def f(x):
+        return math.log(positive(x))
+
+    def df(x):
+        return 1 / positive(x)
+
+    def ddf(x):
+        return -1 / positive(x)**2
+
+    return f, df, ddf
+
+
+def example(label, formula, domain, factory, start, interval):
+    f, df, ddf = factory()
+    point = (0, 0)
+
+    def attempt(calculate):
+        try:
+            answer = calculate()
+        except (ValueError, ArithmeticError) as error:
+            return dict(converged=False, status='The function could not be evaluated. Check its domain.',
+                        error=str(error), history=[])
+        if not answer['converged']:
+            answer['message'] = 'No solution found within the calculation limits.'
+        return answer
+
+    n = attempt(lambda: newton(f, df, ddf, point, start=start))
+    g = attempt(lambda: golden_section(f, point, *interval))
+    code = ('import math\nfrom solution import newton, golden_section, NumericalError\n\n'
+            + inspect.getsource(factory)
+            + f'\nf, df, ddf = {factory.__name__}()\n'
+            + f'point = {point}\n'
+            + 'try:\n'
+            + f'    n = newton(f, df, ddf, point, start={start})\n'
+            + f'    g = golden_section(f, point, a={interval[0]}, b={interval[1]})\n'
+            + "    for answer in (n, g):\n"
+            + "        if not answer['converged']:\n"
+            + "            raise RuntimeError('No solution found within the calculation limits.')\n"
+            + "        print(answer['x'], answer['y'], answer['distance'])\n"
+            + "except (ValueError, RuntimeError) as error:\n"
+            + "    print(f'Calculation failed: {error}')\n")
     return dict(label=label, formula=formula, domain=domain, point=point,
-                starts=starts, intervals=intervals, scope=scope,
-                newton=[newton(f, df, ddf, point, start=s) for s in starts],
-                golden=[golden_section(f, point, *interval) for interval in intervals])
+                starts=[start], intervals=[interval], newton=[n], golden=[g], code=code,
+                curve=samples(f, *interval) if n['converged'] and g['converged'] else [],
+                objective=samples(lambda x: objective(f, point, x), *interval)
+                if n['converged'] and g['converged'] else [])
 
 
 def generate():
@@ -208,21 +253,8 @@ def generate():
                           golden=golden_section(f, point, -2, 2),
                           objective=samples(lambda x: objective(f, point, x), -1.1, 1.1)))
     examples = [
-        example('Another parabola', r'\tfrac12 x^2+1', 'All real x', parabola(.5, 0, 1),
-                (2, 0), [0], [(-2, 2)], 'Unique global minimum; D\'\'=3x²+4 > 0 and D tends to infinity.'),
-        example('Two equal minima', r'x^2', 'All real x', parabola(1, 0, 0),
-                (0, 2), [-2, 0, 2], [(-2, -.5), (.5, 2)],
-                'Both global minima are reported. Newton at zero instead returns a local maximum.'),
-        example('Exponential', r'e^x', 'All real x',
-                (math.exp, math.exp, math.exp), (0, 0), [0], [(-2, 1)],
-                'Unique global minimum; D\'\'=2+4e^(2x) > 0 and D tends to infinity at both ends.'),
-        example('Logarithm', r'\ln x', 'x > 0',
-                (math.log, lambda x: 1/x, lambda x: -1/x**2), (0, 0), [1], [(.2, 2)],
-                'Unique global minimum on x > 0; D\'\' >= 2-e^(-3) > 0 and D diverges at both domain ends.'),
-        example('Reciprocal', r'1/x', 'x > 0 (positive branch only)',
-                (lambda x: 1/x, lambda x: -1/x**2, lambda x: 2/x**3),
-                (0, 0), [1.5], [(.2, 3)],
-                'Unique global minimum on the positive branch. The negative branch is excluded; it has an equally close point at (-1,-1).'),
+        example('Exponential', 'e^x', 'All real x', exponential_functions, 0, (-2, 1)),
+        example('Logarithmic', r'\ln x', 'x > 0', logarithmic_functions, 1, (0.1, 2)),
     ]
     return dict(settings=dict(newton_residual_tol=1e-12, newton_step_tol=1e-14,
                               golden_width_tol=1e-7, golden_interval=[-2, 2]),

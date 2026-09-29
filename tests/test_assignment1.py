@@ -74,19 +74,87 @@ class AssignmentTests(unittest.TestCase):
             self.assertLessEqual(g['width'], 1e-7)
         self.assertEqual(self.data['cases'][0]['golden']['history'][0]['comparison'], '=')
 
-    def test_additional_examples_and_two_global_minima(self):
-        for example in self.data['examples']:
-            for answer in example['newton']+example['golden']:
-                self.assertTrue(answer['converged'], (example['label'], answer['status']))
-        double = self.data['examples'][1]
-        for r in [double['newton'][0], double['newton'][2], *double['golden']]:
+    def test_non_polynomial_agreement_and_unique_minima(self):
+        # On R, exponential D'' = 2 + 4 exp(2x) > 0.
+        # On x > 0, logarithmic D'' >= 2 - exp(-3) > 0:
+        # (log(x)-1)/x² reaches its maximum at exp(3/2).
+        # Both objectives diverge at the ends of their domains, so the
+        # unique stationary root bracketed below is the global minimum.
+        self.assertEqual([e['label'] for e in self.data['examples']], ['Exponential', 'Logarithmic'])
+        for e, factory, interval in zip(self.data['examples'],
+                                       [s.exponential_functions, s.logarithmic_functions],
+                                       [(-2, 1), (.1, 2)]):
+            f, df, ddf = factory()
+            n, g = e['newton'][0], e['golden'][0]
+            self.assertEqual(tuple(e['intervals'][0]), interval)
+            self.assertTrue(n['converged'])
+            self.assertTrue(g['converged'])
+            self.assertLessEqual(n['residual'], 1e-12)
+            self.assertLessEqual(g['width'], 1e-7)
+            self.assertLess(abs(n['x']-g['x']), 1e-7)
+            self.assertLess(abs(n['distance']-g['distance']), 1e-10)
+            for r in [n, g]:
+                self.assertAlmostEqual(r['y'], f(r['x']), places=14)
+                self.assertGreater(r['x'], interval[0])
+                self.assertLess(r['x'], interval[1])
+            lo, hi = interval
+            self.assertLess(s.derivatives(f, df, ddf, (0, 0), lo)[0], 0)
+            self.assertGreater(s.derivatives(f, df, ddf, (0, 0), hi)[0], 0)
+            for _ in range(80):
+                mid = (lo+hi)/2
+                if s.derivatives(f, df, ddf, (0, 0), mid)[0] < 0:
+                    lo = mid
+                else:
+                    hi = mid
+            self.assertAlmostEqual(n['x'], (lo+hi)/2, delta=1e-12)
+            for row in g['history']:
+                self.assertLess(row['retained_b']-row['retained_a'], row['width'])
+            # Every saved sample respects the example's domain.
+            for x, y in e['curve']:
+                self.assertAlmostEqual(y, f(x), places=14)
+            # Execute the actual displayed code with the shared solver module.
+            import contextlib, io, sys
+            from unittest.mock import patch
+            with patch.dict(sys.modules, {'solution': s}), contextlib.redirect_stdout(io.StringIO()) as output:
+                namespace = {}
+                exec(e['code'], namespace)
+            self.assertNotIn('failed', output.getvalue())
+            self.assertEqual(namespace['n'], n)
+            self.assertEqual(namespace['g'], g)
+
+    def test_logarithmic_domain_is_enforced(self):
+        for function in s.logarithmic_functions():
+            for x in [0, -1]:
+                with self.assertRaisesRegex(s.NumericalError, 'x > 0'):
+                    function(x)
+        f, df, ddf = s.logarithmic_functions()
+        with self.assertRaisesRegex(s.NumericalError, 'x > 0'):
+            s.newton(f, df, ddf, (0, 0), start=-1)
+        with self.assertRaisesRegex(s.NumericalError, 'x > 0'):
+            s.golden_section(f, (0, 0), -1, 2)
+
+    def test_example_failure_messages(self):
+        invalid = s.example('Logarithmic', 'log(x)', 'x > 0', s.logarithmic_functions, 0, (-1, 2))
+        self.assertFalse(invalid['newton'][0]['converged'])
+        self.assertFalse(invalid['golden'][0]['converged'])
+        self.assertEqual(invalid['curve'], [])
+        from unittest.mock import patch
+        with patch.object(s, 'newton', side_effect=s.NumericalError('Invalid domain')):
+            e = s.example('Exponential', 'e^x', 'All real x', s.exponential_functions, 0, (-2, 1))
+            self.assertFalse(e['newton'][0]['converged'])
+            self.assertIn('Check its domain', e['newton'][0]['status'])
+        failed = dict(converged=False, status='Maximum iterations reached.', history=[])
+        with patch.object(s, 'golden_section', return_value=failed):
+            e = s.example('Exponential', 'e^x', 'All real x', s.exponential_functions, 0, (-2, 1))
+            self.assertEqual(e['golden'][0]['message'], 'No solution found within the calculation limits.')
+
+    def test_two_global_minima_remains_supported_by_routines(self):
+        f, df, ddf = s.parabola(1, 0, 0)
+        for start in [-2, 2]:
+            r = s.newton(f, df, ddf, (0, 2), start=start)
             self.assertAlmostEqual(abs(r['x']), math.sqrt(1.5), delta=1e-7)
             self.assertAlmostEqual(r['distance'], math.sqrt(7)/2, places=12)
-        maximum = double['newton'][1]
-        self.assertEqual(maximum['classification'], 'local maximum')
-        self.assertEqual(maximum['distance'], 2)
-        reciprocal = self.data['examples'][4]
-        self.assertAlmostEqual(reciprocal['newton'][0]['distance'], math.sqrt(2), places=12)
+        self.assertEqual(s.newton(f, df, ddf, (0, 2), start=0)['classification'], 'local maximum')
 
     def test_general_parabola_and_nonzero_point_height(self):
         f, df, ddf = s.parabola(2, -3, 4)

@@ -593,7 +593,7 @@ L 644.99976 253.998979
     <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle; fill: #29382f" x="613.810893" y="77.60191" transform="rotate(-0 613.810893 77.60191)">3</text>
    </g>
    <g id="text_35">
-    <text style="font-size: 11px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle; fill: #29382f" x="509.848005" y="11.358521" transform="rotate(-0 509.848005 11.358521)">Accepted Newton estimates</text>
+    <text style="font-size: 11px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle; fill: #29382f" x="509.848005" y="11.358521" transform="rotate(-0 509.848005 11.358521)">Newton’s estimate at each iteration</text>
    </g>
    <g id="legend_1">
     <g id="patch_10">

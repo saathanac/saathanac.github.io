@@ -43,14 +43,14 @@ export function NewtonTable({ result }) {
 export function NewtonWork({ c, index }) {
   const n = c.newton, x0 = c.point[0];
   return <>
-    {x0 === 0 ? <><M block>{String.raw`D'(x^{(0)})=D'(0)=0,\qquad D''(0)=22>0`}</M><p>The starting estimate is already the unique minimum. No Newton update is needed; the table records this stationarity check as row 0.</p></> : <>
-      <p>Starting from <M>{'x^{(0)}=0'}</M>, the first two accepted updates are:</p>
+    {x0 === 0 ? <><M block>{String.raw`D'(x^{(0)})=D'(0)=0,\qquad D''(0)=22>0`}</M><p>At the starting estimate x = 0, the first derivative is already zero, so no updates are needed.</p></> : <>
+      <p>Starting from <M>{'x^{(0)}=0'}</M>, the first two updates are:</p>
       {n.history.slice(0, 2).map(r => <div key={r.k} className="worked-step">
         <M block>{String.raw`x^{(${r.k + 1})}\approx ${fixed(r.x)}-\frac{2(${fixed(r.x)})^3+11(${fixed(r.x)})-(${x0})}{6(${fixed(r.x)})^2+11}`}</M>
         <M block>{String.raw`\phantom{x^{(${r.k + 1})}}\approx ${fixed(r.x)}-\frac{${fixed(r.first / 2)}}{${fixed(r.second / 2)}}\approx ${fixed(r.next)}`}</M>
       </div>)}
     </>}
-    <p className="result-line">{n.status} Final <M>{String.raw`x\approx ${fixed(n.x)}`}</M>, Q ≈ {q(n)}, d ≈ <strong>{fixed(n.distance, 6)}</strong>. Residual |D′| = {scientific(n.residual)}; D″ = {fixed(n.curvature, 6)} &gt; 0.</p>
+    <p className="result-line">The method converged to the closest point Q ≈ {q(n)}, giving a minimum distance of <strong>{fixed(n.distance, 6)}</strong> units.</p>
     <Plot index={index} kind="newton" caption={`Newton for P = ${pointName(c)}: estimates on D(x), with a separate iteration trace to distinguish steps near the minimum. The table preserves every accepted estimate.`} />
     <details><summary>Complete Newton table ({n.history.length} rows)</summary><NewtonTable result={n} /></details>
   </>;

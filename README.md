@@ -20,8 +20,8 @@ Use the development server instead of opening `index.html` directly.
 The page includes the symbolic derivation, cubic roots noted as solved using Wolfram Alpha, worked Newton and
 golden-section updates for all five points, complete iteration tables, equal-scale
 geometry plots, method plots, and a comparison of all three answers. Select a
-point to change the worked calculations and figures. Additional examples cover
-another parabola, two equal minima, exponential, logarithmic, and reciprocal curves.
+point to change the worked calculations and figures. The non-polynomial section uses a selector for exponential and logarithmic curves,
+with comparison results, geometry and iteration plots, and expandable histories and code.
 
 Numerical calculations are **precomputed in Python**, not performed by JavaScript.
 The page imports the generated JSON. The numerical script has no external dependencies
@@ -55,7 +55,7 @@ The page supplies the global-minimum arguments for its examples.
 
 ### Regenerate plots
 
-Matplotlib is required only for the 15 standalone SVG figures. A virtual environment
+Matplotlib is required only for the 21 standalone SVG figures. A virtual environment
 keeps this dependency separate from the numerical implementation:
 
 ```sh
@@ -67,7 +67,8 @@ python scripts/generate_plots.py
 ```
 
 Figures are generated from the same JSON as the tables into `public/assignment1/plots/`.
-Regenerate both data and plots after changing a numerical example. SVG output uses a
+Regenerate both data and plots after changing a numerical example. To update only
+the non-polynomial figures, run `python scripts/generate_plots.py --examples-only`. SVG output uses a
 fixed hash seed and omits generation dates for reproducible artifacts.
 
 ### Verification
@@ -115,3 +116,18 @@ The build is written to `dist/`. Hash routes support direct links on GitHub Page
 The existing deployment workflow runs on pushes to `main` when the repository's
 Pages source is **GitHub Actions**. Building locally does not deploy the site.
 No Part 2 implementation is included.
+
+### Non-polynomial verification
+
+The exponential example uses P=(0,0), Newton start 0, and interval [-2,1].
+The logarithmic example uses P=(0,0), Newton start 1, and interval [0.1,2];
+all three logarithmic callables reject x <= 0. Both use the existing tolerances.
+The displayed code is assembled from the same function definitions and settings
+used to produce the JSON, and is executed in the numerical tests.
+
+For the exponential squared distance, D″=2+4 exp(2x)>0 on the real line.
+For the logarithm, D″=2+2(1-ln x)/x² >= 2-exp(-3)>0 on x>0; the bound follows
+by maximizing (ln x-1)/x² at exp(3/2). Each objective diverges at both domain ends.
+Tests check opposite derivative signs at the specified interval endpoints, then
+independently bisect the unique stationary root and compare both methods with it.
+These checks establish that the selected intervals contain the unique global minima.
