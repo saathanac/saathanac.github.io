@@ -2,12 +2,11 @@ import { useState } from 'react';
 import M from './Math.jsx';
 import { fixed, NewtonTable, GoldenTable, Plot } from './WorkedSolutions.jsx';
 
-export default function Examples({ examples, pythonSource }) {
+export default function Examples({ examples }) {
   const [selected, setSelected] = useState(0);
   const e = examples[selected];
   const n = e.newton[0], g = e.golden[0];
   const complete = n.converged && g.converged;
-  const base = `${import.meta.env.BASE_URL}assignment1/`;
   const rows = [
     ['Newton–Raphson', n, n.history.filter(r => r.action === 'Accepted update.').length],
     ['Golden-section', g, g.history.length],
@@ -25,7 +24,7 @@ export default function Examples({ examples, pythonSource }) {
       <p>The same numerical routines are reused with a different function and, for Newton–Raphson, its derivatives.</p>
       {e.domain === 'x > 0' && <p>Domain: x &gt; 0.</p>}
       <p className="calculation-note"><small>Newton starting guess: {e.starts[0]}. Golden-section interval: [{e.intervals[0].join(', ')}].</small></p>
-      {complete && <Plot index={`example-${selected}`} kind="geometry" caption={`${e.label}: the segment joins P to the closest point Q*. Both axes use the same scale.`} />}
+      {complete && <Plot index={`example-${selected}`} kind="geometry" caption={`${e.label}: the segment joins P to the closest point Q*.`} />}
       <div className="table-scroll" tabIndex="0" role="region" aria-label="Non-polynomial results">
         <table>
           <caption>{e.label} results</caption>
@@ -45,12 +44,7 @@ export default function Examples({ examples, pythonSource }) {
         <h5>Newton–Raphson</h5><NewtonTable result={n} />
         <h5>Golden-section search</h5><GoldenTable result={g} />
       </details>
-      <details><summary>Python code</summary>
-        <p>Save the downloaded source as <code>solution.py</code>, then run this example alongside it.</p>
-        <div className="downloads"><a href={`${base}solution.py`} download>Download Python source</a><a href={`${base}results.json`} download>Download results &amp; histories (JSON)</a></div>
-        <pre><code>{e.code}</code></pre>
-        <details className="source-details"><summary>Shared numerical routines and source</summary><pre><code>{pythonSource}</code></pre></details>
-      </details>
+
     </div>
   </>;
 }

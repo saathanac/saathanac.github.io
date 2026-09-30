@@ -43,17 +43,12 @@ test('all five worked points, math, plots, tables, and navigation', async ({ pag
 
 test('Python and result downloads are real files', async ({ page }) => {
   await page.goto('/#/assignments/1');
-  await page.locator('#examples > .non-polynomial-example > details').last().locator('summary').first().click();
-  for (const [name, filename] of [['Download Python source', 'solution.py'], ['Download results & histories (JSON)', 'results.json']]) {
+  for (const filename of ['solution.py', 'results.json']) {
     const response = await page.request.get(`/assignment1/${filename}`);
     expect(response.ok()).toBe(true);
     if (filename.endsWith('.py')) expect(await response.text()).toContain('def golden_section(');
     else expect((await response.json()).cases).toHaveLength(5);
-    const pending = page.waitForEvent('download');
-    await page.getByRole('link', { name, exact: true }).click();
-    const download = await pending;
-    expect(download.suggestedFilename()).toBe(filename);
-    expect(await download.failure()).toBeNull();
+
   }
 });
 
@@ -72,7 +67,7 @@ test('mobile layout confines wide equations and tables', async ({ page }) => {
 test('print includes every point and collapsed histories, then restores screen state', async ({ page }) => {
   await page.goto('/#/assignments/1');
   await expect(page.getByRole('heading', { name: 'Part 1 · Distance from a curve' })).toBeVisible();
-  await expect(page.locator('details')).toHaveCount(13);
+  await expect(page.locator('details')).toHaveCount(11);
   await page.evaluate(() => document.fonts.ready);
   await page.emulateMedia({ media: 'print' });
   await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
@@ -93,7 +88,7 @@ test('print includes every point and collapsed histories, then restores screen s
 });
 
 
-test('non-polynomial selector updates results, plots, histories, and Python', async ({ page }) => {
+test('non-polynomial selector updates results, plots, and histories', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/#/assignments/1');
@@ -120,8 +115,6 @@ test('non-polynomial selector updates results, plots, histories, and Python', as
     }
     await section.getByText('Iteration tables', { exact: true }).click();
     await expect(section.locator('details').first().locator('table')).toHaveCount(2);
-    await section.getByText('Python code', { exact: true }).click();
-    await expect(section.locator('pre').first()).toContainText(i === 0 ? 'exponential_functions' : 'logarithmic_functions');
     await section.screenshot({ path: `test-results/example-${i}.png` });
   }
   expect(errors).toEqual([]);

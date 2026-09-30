@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import M from '../assignment1/Math.jsx';
 import data from '../assignment1/results.json';
-import pythonSource from '../../scripts/assignment1.py?raw';
 import Examples from '../assignment1/Examples.jsx';
+import Part2 from '../assignment1/Part2.jsx';
 import { AnalyticalWork, NewtonWork, GoldenWork, PointWork, Plot, fixed, pointName } from '../assignment1/WorkedSolutions.jsx';
 import '../assignment1/assignment.css';
 
@@ -28,7 +28,7 @@ export default function Assignment1() {
 
   const work = (Component) => data.cases.map((c, i) => <PointWork key={i} caseData={c} selected={i === selected}><Component c={c} index={i} /></PointWork>);
   return <article className="assignment-one" ref={article}>
-    <div className="part-heading"><h3>Part 1 · Distance from a curve</h3><button type="button" className="print-button" onClick={() => window.print()}>Print full solution</button></div>
+    <div className="part-heading"><h3>Part 1 · Distance from a curve</h3></div>
     <nav className="section-nav" aria-label="Part 1 sections">
       {sections.map(([id, label]) => <button type="button" key={id} onClick={() => { const target = document.getElementById(id); target.scrollIntoView(); target.focus({ preventScroll: true }); }}>{label}</button>)}
     </nav>
@@ -110,7 +110,8 @@ export default function Assignment1() {
 
     <section id="examples" tabIndex="-1" className="solution-section">
       <h3>6. Non-polynomial examples</h3>
-      <Examples examples={data.examples} pythonSource={pythonSource} />
+      <Examples examples={data.examples} />
     </section>
+    <Part2 />
   </article>;
 }

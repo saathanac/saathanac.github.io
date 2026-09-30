@@ -101,3 +101,10 @@
 
 .calculation-note { color: #637065; }
 .calculation-note small { font-size: .85em; }
+
+@media screen and (max-width: 600px) {
+  .part-two .scientific-figure img { min-width: 620px; }
+}
+@media print {
+  .part-two { break-before: page; }
+}
