@@ -98,6 +98,33 @@ def snapshot(parameters, points, gram, rhs, iteration, **extra):
                 gradient=grad, gradient_norm=max(map(abs, grad)), **extra)
 
 
+def coordinate_newton(points, degree, start=None, tolerance=1e-8, max_sweeps=10000):
+    """Update one coefficient at a time, immediately reusing its new value."""
+    tolerance = finite(tolerance)
+    if tolerance <= 0 or isinstance(max_sweeps, bool) or not isinstance(max_sweeps, int) or max_sweeps < 1:
+        raise ValueError('Use a positive tolerance and positive integer max_sweeps.')
+    gram, rhs, hessian = system(points, degree)
+    solve_linear(gram, rhs)
+    parameters = initial_parameters(start, degree)
+    history = [snapshot(parameters, points, gram, rhs, 0)]
+    updates = []
+    for sweep in range(1, max_sweeps+1):
+        if history[-1]['gradient_norm'] < tolerance:
+            break
+        for j in range(degree+1):
+            before = parameters.copy()
+            grad = gradient(parameters, gram, rhs, len(points))[j]
+            parameters[j] = finite(parameters[j]-grad/hessian[j][j])
+            updates.append(snapshot(parameters, points, gram, rhs, sweep,
+                                    coordinate=j, before=before))
+        history.append(snapshot(parameters, points, gram, rhs, sweep))
+    final = history[-1]
+    converged = final['gradient_norm'] < tolerance
+    return dict(**final, history=history, updates=updates, tolerance=tolerance,
+                converged=converged,
+                status='Converged.' if converged else 'Maximum sweeps reached before convergence.')
+
+
 def simultaneous_newton(points, degree, start=None, tolerance=1e-8):
     """Update all coefficients together by solving H delta = gradient.
 
@@ -127,15 +154,20 @@ def generate():
                                        ('Parabola', 2, ['a', 'b', 'c'], [.75, .05, .55])]:
         gram, rhs, hessian = system(POINTS, degree)
         numerical = simultaneous_newton(POINTS, degree)
+        sequential = coordinate_newton(POINTS, degree)
         observed = []
         for (x, y), fitted in zip(POINTS, predictions(exact, [p[0] for p in POINTS])):
             observed.append(dict(x=x, y=y, fitted=fitted, residual=fitted-y, squared_residual=(fitted-y)**2))
         xs = [-.2+3.4*i/160 for i in range(161)]
         fits = [dict(iteration=row['iteration'], parameters=row['parameters'],
                      points=list(zip(xs, predictions(row['parameters'], xs)))) for row in numerical['history']]
+        chosen = sorted(set([0, 1, 2, 3, sequential['iteration']]))
+        sequential_fits = [dict(iteration=k, parameters=sequential['history'][k]['parameters'],
+                               points=list(zip(xs, predictions(sequential['history'][k]['parameters'], xs))))
+                           for k in chosen]
         models.append(dict(label=label, degree=degree, names=names, gram=gram, rhs=rhs,
                            hessian=hessian, analytical=dict(parameters=exact, mse=mse(exact, POINTS), rows=observed),
-                           simultaneous=numerical, fits=fits))
+                           simultaneous=numerical, fits=fits, sequential=sequential, sequential_fits=sequential_fits))
     return dict(points=POINTS, models=models)
 
 

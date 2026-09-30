@@ -8,9 +8,11 @@ for (const [selected, label] of [[0, 'Line'], [1, 'Parabola']]) {
     const section = page.locator('#part2');
     await section.getByLabel('Model', { exact: true }).selectOption(String(selected));
     await expect(section.getByRole('heading', { name: `${label} model and objective` })).toBeVisible();
-    await expect(section.locator('.result-line')).toContainText('Converged in 1 Newton step');
+    await expect(section.locator('.result-line').first()).toContainText('Converged in 1 Newton step');
     await expect(section.getByRole('heading', { name: 'Multivariate Newton–Raphson' })).toBeVisible();
-    await expect(section.getByText('Coordinate-wise Newton', { exact: true })).toHaveCount(0);
+    await expect(section.getByRole('heading', { name: 'Newton–Raphson — Single-parameter updates' })).toBeVisible();
+    await expect(section.locator('.coordinate-newton .worked-step')).toHaveCount(3);
+    await expect(section.locator('.coordinate-newton .result-line')).toContainText(selected === 0 ? '40 sweeps' : '422 sweeps');
     await expect(section.getByRole('region', { name: `${label} residuals` }).locator('tbody tr')).toHaveCount(4);
     await expect(section.getByRole('region', { name: 'Final fitted models' }).locator('tbody tr')).toHaveCount(2);
     for (const image of await section.locator('img').all()) {

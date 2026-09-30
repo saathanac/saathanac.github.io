@@ -16,16 +16,17 @@ plt.rcParams.update({'font.size': 10, 'axes.spines.top': False, 'axes.spines.rig
                      'axes.labelcolor': '#29382f', 'text.color': '#29382f', 'axes.edgecolor': '#b1b9ae',
                      'grid.color': '#e1e6dd', 'svg.fonttype': 'none', 'svg.hashsalt': 'syde572-part2'})
 
-for model in DATA['models']:
+for model, coordinate in [(m, c) for m in DATA['models'] for c in (False, True)]:
     name = model['label'].lower()
-    final = model['simultaneous']
+    prefix = f'part2-{name}' + ('-coordinate' if coordinate else '')
+    final = model['sequential' if coordinate else 'simultaneous']
     fig, ax = plt.subplots(figsize=(9, 4), layout='constrained')
-    colors = ['#999999', '#315d43']
-    styles = [':', '-']
+    colors = ['#999999', '#ad772c', '#689bb2', '#7972a2', '#315d43'] if coordinate else ['#999999', '#315d43']
+    styles = [':', '--', '-.', '--', '-'] if coordinate else [':', '-']
     ax.scatter(*zip(*DATA['points']), color='#202a24', marker='o', s=32, zorder=5, label='Observed data')
-    for curve, color, style in zip(model['fits'], colors, styles):
+    for curve, color, style in zip(model['sequential_fits' if coordinate else 'fits'], colors, styles):
         k = curve['iteration']
-        label = f'Iteration {k}'
+        label = f'Sweep {k}' if coordinate else f'Iteration {k}'
         if k == 0:
             label += ' (start: ŷ = 0)'
         elif k == final['iteration']:
@@ -41,24 +42,25 @@ for model in DATA['models']:
     ax.set_axisbelow(True)
     ax.margins(y=.15)
     ax.legend(loc='upper left', fontsize=8)
-    fig.savefig(OUT/f'part2-{name}-fits.svg', metadata={'Date': None}, facecolor='white')
+    fig.savefig(OUT/f'{prefix}-fits.svg', metadata={'Date': None}, facecolor='white')
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(9, 4), layout='constrained')
     ax.semilogy([r['iteration'] for r in final['history']], [r['mse'] for r in final['history']],
-                color='#315d43', marker='o')
-    for row in final['history']:
+                color='#315d43', marker=None if coordinate else 'o')
+    for row in (final['history'][-1:] if coordinate else final['history']):
         offset = (12, -12) if row['iteration'] == 0 else (-190, 22)
-        ax.annotate(f"Iteration {row['iteration']}: MSE = {row['mse']:.4f}",
+        ax.annotate(f"{'Sweep' if coordinate else 'Iteration'} {row['iteration']}: MSE = {row['mse']:.4f}",
                     (row['iteration'], row['mse']), xytext=offset, textcoords='offset points', fontsize=9)
-    ax.set_xticks([0, 1])
+    if not coordinate:
+        ax.set_xticks([0, 1])
     ax.axhline(model['analytical']['mse'], color='#285d8c', ls='--', lw=1, label='Analytical minimum')
-    ax.set_title(f'{model["label"]}: MSE before and after Newton’s update', fontsize=11)
-    ax.set_xlabel('Newton iteration')
+    ax.set_title(f'{model["label"]}: Newton–Raphson with single-parameter updates' if coordinate else f'{model["label"]}: MSE before and after Newton’s update', fontsize=11)
+    ax.set_xlabel('Complete sweep' if coordinate else 'Newton iteration')
     ax.set_ylabel('Mean squared error (log scale)')
     ax.grid(alpha=.7)
     ax.set_axisbelow(True)
     ax.legend(fontsize=9)
-    fig.savefig(OUT/f'part2-{name}-mse.svg', metadata={'Date': None}, facecolor='white')
+    fig.savefig(OUT/f'{prefix}-mse.svg', metadata={'Date': None}, facecolor='white')
     plt.close(fig)
-print(f'Wrote 4 Part 2 SVG figures to {OUT}')
+print(f'Wrote 8 Part 2 SVG figures to {OUT}')

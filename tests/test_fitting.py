@@ -80,6 +80,29 @@ class FittingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             f.simultaneous_newton(f.POINTS, 2, start=[0, 0])
 
+    def test_coordinate_updates_and_convergence(self):
+        for m, sweeps in zip(self.data['models'], [40, 422]):
+            r = m['sequential']
+            self.assertTrue(r['converged'])
+            self.assertEqual(r['iteration'], sweeps)
+            previous = [0]*(m['degree']+1)
+            last_error = f.mse(previous, f.POINTS)
+            for row in r['updates']:
+                self.assertEqual(row['before'], previous)
+                j = row['coordinate']
+                expected = (m['rhs'][j]-sum(v*previous[k] for k, v in enumerate(m['gram'][j]) if k != j))/m['gram'][j][j]
+                self.assertAlmostEqual(row['parameters'][j], expected, places=14)
+                self.assertLessEqual(row['mse'], last_error+1e-13)
+                previous, last_error = row['parameters'], row['mse']
+            for value, exact in zip(r['parameters'], m['analytical']['parameters']):
+                self.assertAlmostEqual(value, exact, delta=3e-8)
+            self.assertAlmostEqual(r['mse'], m['analytical']['mse'], places=13)
+            self.assertFalse(f.coordinate_newton(f.POINTS, m['degree'], max_sweeps=1)['converged'])
+            for curve in m['sequential_fits']:
+                self.assertEqual(curve['parameters'], r['history'][curve['iteration']]['parameters'])
+                for x, y in curve['points']:
+                    self.assertAlmostEqual(y, f.predictions(curve['parameters'], [x])[0], places=14)
+
     def test_saved_results_and_download(self):
         for path in ['src/assignment1/fitting-results.json', 'public/assignment1/fitting-results.json']:
             self.assertEqual(json.loads((ROOT/path).read_text()), json.loads(json.dumps(self.data)))

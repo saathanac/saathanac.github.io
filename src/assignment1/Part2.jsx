@@ -37,6 +37,45 @@ function Analytical({ model: m }) {
   </>;
 }
 
+function CoordinateWise({ model: m }) {
+  const r = m.sequential;
+  return <section className="coordinate-newton">
+    <h4>Newton–Raphson — Single-parameter updates</h4>
+    <p>Update one parameter at a time, keeping the others fixed and using each new value immediately. One sweep updates all parameters.</p>
+    <p>For each parameter, use its first and second derivatives to find where its first derivative is zero. This minimizes the MSE with the other parameters held fixed.</p>
+    <M block>{String.raw`\theta_j^{\mathrm{new}}=\theta_j-\frac{\partial E/\partial\theta_j}{\partial^2E/\partial\theta_j^2}`}</M>
+    {m.degree === 1 ? <>
+      <M block>{String.raw`m_{k+1}=\frac{31-6b_k}{14},\qquad b_{k+1}=\frac{13-6m_{k+1}}4`}</M>
+    </> : <>
+      <M block>{String.raw`a_{k+1}=\frac{83-36b_k-14c_k}{98}`}</M>
+      <M block>{String.raw`b_{k+1}=\frac{31-36a_{k+1}-6c_k}{14},\qquad c_{k+1}=\frac{13-14a_{k+1}-6b_{k+1}}4`}</M>
+    </>}
+    <h5>First three sweeps</h5>
+    <p>Start all parameters at zero. The calculations below are rounded; Python continues to convergence.</p>
+    {r.history.slice(1, 4).map(row => <div className="worked-step" key={row.iteration}>
+      <h5>Sweep {row.iteration}</h5>
+      {r.updates.filter(u => u.iteration === row.iteration).map(u => {
+        const j = u.coordinate;
+        const terms = m.gram[j].map((v, k) => k === j ? '' : `-${v}(${fixed(u.before[k], 6)})`).join('');
+        const explanation = m.degree === 1
+          ? ['Update the slope m while keeping the intercept b fixed.', 'Update the intercept b using the new slope m.']
+          : ['Update a while keeping b and c fixed.', 'Update b using the new a, while keeping c fixed.', 'Update c using the new a and b.'];
+        return <div key={j}>
+          {row.iteration === 1 && <p>{explanation[j]}</p>}
+          <M block>{String.raw`${m.names[j]}^{(${row.iteration})}\approx\frac{${m.rhs[j]}${terms}}{${m.gram[j][j]}}\approx${fixed(u.parameters[j], 9)}`}</M>
+        </div>;
+      })}
+      {row.iteration === 1 && <p>Calculate the MSE after updating all parameters. Repeat this sequence because changing one parameter can change the best values of the others.</p>}
+      <M block>{String.raw`E^{(${row.iteration})}\approx${fixed(row.mse, 9)}`}</M>
+    </div>)}
+    <p>Stop when <M>{String.raw`\|\nabla E\|_\infty<10^{-8}`}</M>, checked after each sweep, with a limit of 10,000 sweeps.</p>
+    <p className="result-line">{r.converged ? `Converged after ${r.iteration} sweeps. ` : r.status}
+      {m.names.map((name, j) => `${name} ≈ ${fixed(r.parameters[j], 6)}`).join(', ')}; MSE ≈ <strong>{fixed(r.mse, 6)}</strong>.</p>
+    <Plot index={`part2-${m.label.toLowerCase()}-coordinate`} kind="fits" caption="Newton–Raphson with single-parameter updates: the starting fit, first three sweeps, and final fit." />
+    <Plot index={`part2-${m.label.toLowerCase()}-coordinate`} kind="mse" caption="MSE after each complete sweep. The dashed line marks the analytical minimum." />
+  </section>;
+}
+
 function Simultaneous({ model: m }) {
   const s = m.simultaneous;
   const terms = m.gram.map((row, i) => `${row.map((v, j) => `${v}${m.names[j]}`).join('+')}-${m.rhs[i]}`);
@@ -78,6 +117,7 @@ export default function Part2() {
         {m.names.map((name, j) => `${name} ≈ ${fixed(m.simultaneous.parameters[j], 6)}`).join(', ')}; MSE ≈ <strong>{fixed(m.simultaneous.mse, 6)}</strong>.</p>
       <Plot index={`part2-${m.label.toLowerCase()}`} kind="fits" caption={`${m.label}: starting fit and the fit after one Newton step alongside the observed data.`} />
       <Plot index={`part2-${m.label.toLowerCase()}`} kind="mse" caption="MSE before and after the Newton update. The dashed line marks the analytical minimum." />
+      <CoordinateWise model={m} />
     </div>
     <h4>Final comparison</h4>
     <div className="table-scroll" tabIndex="0" role="region" aria-label="Final fitted models"><table>
