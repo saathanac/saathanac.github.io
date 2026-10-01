@@ -51,7 +51,7 @@ function CoordinateWise({ model: m }) {
       <M block>{String.raw`b_{k+1}=\frac{31-36a_{k+1}-6c_k}{14},\qquad c_{k+1}=\frac{13-14a_{k+1}-6b_{k+1}}4`}</M>
     </>}
     <h5>First three sweeps</h5>
-    <p>Start all parameters at zero. The calculations below are rounded; Python continues to convergence.</p>
+    <p>Start all parameters at zero. The calculations below are rounded. Python continues to convergence.</p>
     {r.history.slice(1, 4).map(row => <div className="worked-step" key={row.iteration}>
       <h5>Sweep {row.iteration}</h5>
       {r.updates.filter(u => u.iteration === row.iteration).map(u => {
@@ -70,7 +70,7 @@ function CoordinateWise({ model: m }) {
     </div>)}
     <p>Stop when <M>{String.raw`\|\nabla E\|_\infty<10^{-8}`}</M>, checked after each sweep, with a limit of 10,000 sweeps.</p>
     <p className="result-line">{r.converged ? `Converged after ${r.iteration} sweeps. ` : r.status}
-      {m.names.map((name, j) => `${name} ≈ ${fixed(r.parameters[j], 6)}`).join(', ')}; MSE ≈ <strong>{fixed(r.mse, 6)}</strong>.</p>
+      {m.names.map((name, j) => `${name} ≈ ${fixed(r.parameters[j], 6)}`).join(', ')}. MSE ≈ <strong>{fixed(r.mse, 6)}</strong>.</p>
     <Plot index={`part2-${m.label.toLowerCase()}-coordinate`} kind="fits" caption="Newton–Raphson with single-parameter updates: the starting fit, first three sweeps, and final fit." />
     <Plot index={`part2-${m.label.toLowerCase()}-coordinate`} kind="mse" caption="MSE after each complete sweep. The dashed line marks the analytical minimum." />
   </section>;
@@ -83,8 +83,11 @@ function Simultaneous({ model: m }) {
     <h4>Multivariate Newton–Raphson</h4>
     <p>Update all parameters together using the gradient and Hessian. For these quadratic MSE functions, one Newton step gives the analytical solution in exact arithmetic.</p>
     <M block>{String.raw`\nabla E=\frac12${matrix(terms.map(t => [t]))},\qquad H=${matrix(m.hessian)}`}</M>
-    <M block>{String.raw`H\Delta=\nabla E,\qquad\boldsymbol{\theta}_{\mathrm{new}}=\boldsymbol{\theta}-\Delta`}</M>
-    <p>Start all parameters at zero, then solve for the update:</p>
+    <M block>{String.raw`\boldsymbol{\theta}_{\mathrm{new}}=\boldsymbol{\theta}-H^{-1}\nabla E`}</M>
+    <p><M>{String.raw`\boldsymbol{\theta}`}</M> is the parameter vector. <M>{String.raw`\nabla E`}</M> (nabla E) is the gradient: the first derivative of the error with respect to each parameter. <M>{String.raw`H^{-1}`}</M> is the inverse of the Hessian, the matrix of second derivatives.</p>
+    <M block>{String.raw`\Delta=H^{-1}\nabla E,\qquad\boldsymbol{\theta}_{\mathrm{new}}=\boldsymbol{\theta}-\Delta`}</M>
+    <p><M>{String.raw`\Delta`}</M> (delta) is the adjustment vector subtracted from the current parameters.</p>
+    <p>Start all parameters at zero, then calculate the adjustment:</p>
     <M block>{String.raw`\boldsymbol{\theta}^{(0)}=${matrix(m.names.map(() => [0]))},\quad\nabla E(0)=${matrix(s.starting_gradient.map(v => [v]))}`}</M>
     <M block>{String.raw`\Delta=${matrix(s.delta.map(v => [fixed(v, 4)]))},\quad\boldsymbol{\theta}^{(1)}=${matrix(s.parameters.map(v => [fixed(v, 4)]))}`}</M>
     <M block>{String.raw`E(\boldsymbol{\theta}^{(1)})=${fixed(s.mse, 4)}`}</M>
@@ -114,7 +117,7 @@ export default function Part2() {
       <Simultaneous model={m} />
       <h4>Results and plots</h4>
       <p className="result-line">{m.simultaneous.converged ? `Converged in ${m.simultaneous.iteration} Newton step. ` : `${m.simultaneous.status} `}
-        {m.names.map((name, j) => `${name} ≈ ${fixed(m.simultaneous.parameters[j], 6)}`).join(', ')}; MSE ≈ <strong>{fixed(m.simultaneous.mse, 6)}</strong>.</p>
+        {m.names.map((name, j) => `${name} ≈ ${fixed(m.simultaneous.parameters[j], 6)}`).join(', ')}. MSE ≈ <strong>{fixed(m.simultaneous.mse, 6)}</strong>.</p>
       <Plot index={`part2-${m.label.toLowerCase()}`} kind="fits" caption={`${m.label}: starting fit and the fit after one Newton step alongside the observed data.`} />
       <Plot index={`part2-${m.label.toLowerCase()}`} kind="mse" caption="MSE before and after the Newton update. The dashed line marks the analytical minimum." />
       <CoordinateWise model={m} />
@@ -125,5 +128,7 @@ export default function Part2() {
       <thead><tr><th scope="col">Model</th><th scope="col">Fitted equation</th><th scope="col">Minimum MSE</th></tr></thead>
       <tbody>{data.models.map((model, i) => <tr key={model.label}><th scope="row">{model.label}</th><td><M>{equations[i]}</M></td><td>{fixed(model.analytical.mse, 4)}</td></tr>)}</tbody>
     </table></div>
+    <p>The parabola fits these data better than the line, with a lower minimum MSE ({fixed(data.models[1].analytical.mse, 4)} compared with {fixed(data.models[0].analytical.mse, 4)}).</p>
+    <p>Both Newton methods match the analytical minimum MSE to six decimal places, but multivariate Newton needs only one update for each model, compared with {data.models[0].sequential.iteration} sweeps for the line and {data.models[1].sequential.iteration} for the parabola using single-parameter updates.</p>
   </section>;
 }

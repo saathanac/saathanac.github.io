@@ -37,6 +37,7 @@ export default function Examples({ examples }) {
         </table>
       </div>
       {complete && <>
+        <p>Both methods give the same minimum distance to six decimal places. Newton–Raphson uses fewer iterations here, while golden-section search requires no derivatives.</p>
         <Plot index={`example-${selected}`} kind="newton" caption="Newton–Raphson: the estimates approach the closest point’s x-coordinate." />
         <Plot index={`example-${selected}`} kind="golden" caption="Golden-section search: the interval narrows around the closest point’s x-coordinate." />
       </>}

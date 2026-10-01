@@ -33,7 +33,7 @@ export function AnalyticalWork({ c }) {
 
 export function NewtonTable({ result }) {
   return <div className="table-scroll" tabIndex="0" role="region" aria-label="Newton iteration table">
-    <table><caption>Newton history. D and both derivatives are evaluated at the current estimate; D(next) uses the accepted next estimate.</caption>
+    <table><caption>Newton history. D and both derivatives are evaluated at the current estimate. D(next) uses the accepted next estimate.</caption>
       <thead><tr>{['k', 'Current x⁽ᵏ⁾', 'D′', 'D″', 'Next x⁽ᵏ⁺¹⁾', 'D(current)', 'D(next)'].map(h => <th scope="col" key={h}>{h}</th>)}</tr></thead>
       <tbody>{result.history.map(r => <tr key={r.k}><th scope="row">{r.k}</th><td>{fixed(r.x)}</td><td>{scientific(r.first)}</td><td>{fixed(r.second, 6)}</td><td>{fixed(r.next)}</td><td>{fixed(r.D)}</td><td>{fixed(r.next_D)}</td></tr>)}</tbody>
     </table>
@@ -58,7 +58,7 @@ export function NewtonWork({ c, index }) {
 
 export function GoldenTable({ result }) {
   return <div className="table-scroll" tabIndex="0" role="region" aria-label="Golden-section iteration table">
-    <table><caption>Golden-section history. Each row shows the interval before comparison and the retained interval afterward. Display values are rounded; decisions use full precision.</caption>
+    <table><caption>Golden-section history. Each row shows the interval before comparison and the retained interval afterward. Display values are rounded. Decisions use full precision.</caption>
       <thead><tr>{['k', 'a', 'b', 'u', 'v', 'D(u)', 'D(v)', 'Width', 'Compare', 'Retained [a, b]'].map(h => <th scope="col" key={h}>{h}</th>)}</tr></thead>
       <tbody>{result.history.map(r => <tr key={r.k}><th scope="row">{r.k}</th>{['a', 'b', 'u', 'v', 'Du', 'Dv'].map(key => <td key={key}>{fixed(r[key])}</td>)}<td>{scientific(r.width)}</td><td>{r.comparison}</td><td>[{fixed(r.retained_a)}, {fixed(r.retained_b)}]</td></tr>)}</tbody>
     </table>
@@ -78,7 +78,7 @@ export function GoldenWork({ c, index }) {
       <p>Since <M>{`D(u) ${r.comparison} D(v)`}</M>, retain {r.comparison === '<' ? '[a, v]' : r.comparison === '>' ? '[u, b]' : '[u, v]'} ≈ [{fixed(r.retained_a)}, {fixed(r.retained_b)}].</p>
     </div>)}
     <M block>{String.raw`x^*\approx\frac{a_{\rm final}+b_{\rm final}}{2}\approx\frac{${fixed(g.a, 10)}+(${fixed(g.b, 10)})}{2}\approx ${fixed(g.x)}`}</M>
-    <p className="result-line">{g.status} After {g.history.length} interval updates, width = {scientific(g.width)} ≤ 10⁻⁷. Q ≈ {q(g)}; d ≈ <strong>{fixed(g.distance, 6)}</strong>.</p>
+    <p className="result-line">{g.status} After {g.history.length} interval updates, width = {scientific(g.width)} ≤ 10⁻⁷. Q ≈ {q(g)}, d ≈ <strong>{fixed(g.distance, 6)}</strong>.</p>
     <Plot index={index} kind="golden" caption={`Golden-section search for P = ${pointName(c)}: retained intervals approach the minimizer. The logarithmic width plot shows every contraction and the stopping threshold.`} />
     <details><summary>Complete golden-section table ({g.history.length} updates)</summary><GoldenTable result={g} /></details>
   </>;

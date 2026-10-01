@@ -37,7 +37,7 @@ export default function Assignment1() {
       <h3>1. Problem and geometry</h3>
       <p>Find the shortest distance from <M>{'y=x^2+5'}</M> to each of (0, 0), (−4, 0), (−8, 0), (2, 0), and (6, 0).</p>
       <p className="print-note">Full solution: all five assigned points are included below.</p>
-      <p>The given point is <M>{'P=(x_0,y_0)'}</M>, and <M>{'Q=(x,x^2+5)'}</M> is a point on the parabola. We choose x so that Q is as close as possible to P; this closest point is <M>{'Q^*'}</M>.</p>
+      <p>The given point is <M>{'P=(x_0,y_0)'}</M>, and <M>{'Q=(x,x^2+5)'}</M> is a point on the parabola. We choose x so that Q is as close as possible to P. This closest point is <M>{'Q^*'}</M>.</p>
     </section>
 
     <section id="analytical" tabIndex="-1" className="solution-section">
@@ -93,7 +93,7 @@ export default function Assignment1() {
       <M block>{String.raw`\text{Inverse golden ratio:}\qquad r=\frac{1}{\varphi}=\frac{\sqrt5-1}{2}\approx0.618033989`}</M>
       <p>Use the inverse golden ratio to place two test points, u and v, inside the current interval [a, b]:</p>
       <M block>{String.raw`u=b-r(b-a),\qquad v=a+r(b-a)`}</M>
-      <ul className="method-rules"><li>If D(u) &lt; D(v), keep [a, v].</li><li>If D(u) &gt; D(v), keep [u, b].</li><li>If D(u) = D(v), keep [u, v]; the closest point’s x-coordinate lies between the two test points.</li></ul>
+      <ul className="method-rules"><li>If D(u) &lt; D(v), keep [a, v].</li><li>If D(u) &gt; D(v), keep [u, b].</li><li>If D(u) = D(v), keep [u, v]. The closest point’s x-coordinate lies between the two test points.</li></ul>
       <p>Repeat until the interval is very small, then use its midpoint to estimate the closest point Q and the minimum distance.</p>
       {work(GoldenWork)}
     </section>
@@ -105,7 +105,7 @@ export default function Assignment1() {
         <thead><tr>{['Point P', 'Closest point Q* (analytical)', 'Analytical d', 'Newton d', 'Golden d'].map(v => <th key={v} scope="col">{v}</th>)}</tr></thead>
         <tbody>{data.cases.map(c => <tr key={c.point[0]}><th scope="row">{pointName(c)}</th><td>({fixed(c.analytical.x, 6)}, {fixed(c.analytical.y, 6)})</td><td>{fixed(c.analytical.distance, 6)}</td><td>{fixed(c.newton.distance, 6)}</td><td>{fixed(c.golden.distance, 6)}</td></tr>)}</tbody>
       </table></div>
-      <p>All three methods give the same minimum distances to six decimal places.</p>
+      <p>All three methods give the same minimum distances to six decimal places. For these points, Newton–Raphson needs fewer iterations than golden-section search, while golden-section search works without derivatives.</p>
     </section>
 
     <section id="examples" tabIndex="-1" className="solution-section">
@@ -113,5 +113,13 @@ export default function Assignment1() {
       <Examples examples={data.examples} />
     </section>
     <Part2 />
+    <section className="solution-section" aria-labelledby="hand-worked-title">
+      <h3 id="hand-worked-title">Hand-worked solutions</h3>
+      <object className="hand-worked-pdf" data={`${import.meta.env.BASE_URL}assignment1/hand-worked-solutions.pdf#view=FitH`} type="application/pdf" aria-label="Hand-worked solutions PDF">
+        <div className="hand-worked-pages" tabIndex="0" role="region" aria-label="Scrollable hand-worked solutions">
+          {Array.from({ length: 7 }, (_, i) => <img key={i} src={`${import.meta.env.BASE_URL}assignment1/hand-worked/page-${i + 1}.png`} alt={`Hand-worked solutions, page ${i + 1} of 7`} />)}
+        </div>
+      </object>
+    </section>
   </article>;
 }
