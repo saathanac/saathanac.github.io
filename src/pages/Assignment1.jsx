@@ -117,7 +117,7 @@ export default function Assignment1() {
       <h3 id="hand-worked-title">Hand-worked solutions</h3>
       <object className="hand-worked-pdf" data={`${import.meta.env.BASE_URL}assignment1/hand-worked-solutions.pdf#view=FitH`} type="application/pdf" aria-label="Hand-worked solutions PDF">
         <div className="hand-worked-pages" tabIndex="0" role="region" aria-label="Scrollable hand-worked solutions">
-          {Array.from({ length: 7 }, (_, i) => <img key={i} src={`${import.meta.env.BASE_URL}assignment1/hand-worked/page-${i + 1}.png`} alt={`Hand-worked solutions, page ${i + 1} of 7`} />)}
+          {Array.from({ length: 8 }, (_, i) => <img key={i} src={`${import.meta.env.BASE_URL}assignment1/hand-worked/page-${i + 1}.png`} alt={`Hand-worked solutions, page ${i + 1} of 8`} />)}
         </div>
       </object>
     </section>
